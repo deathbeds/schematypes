@@ -1,3 +1,5 @@
 jsonschema[all]
 munch
 importnb
+pyld
+pytest
