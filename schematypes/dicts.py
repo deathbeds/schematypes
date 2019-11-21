@@ -1,78 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[6]:
+from .schemas import Dict, List
+import requests
 
 
-import importnb
+class DictofDict(Dict, additionalProperties=Dict.__schema__): ...
 
-with importnb.Notebook():
-    try:
-        from .schemas import Dict, List
-    except:
-        from schemas import Dict, List
-
-
-# In[7]:
-
-
-class DictofDict(Dict, additionalProperties=Dict.__schema__):
-    def graph(x, **kwargs):
-        return __import__("networkx").from_dict_of_dicts(x, **kwargs)
-
-    def digraph(x, **kwargs):
-        kwargs["create_using"] = kwargs.get(
-            "create_using", __import__("networkx").DiGraph()
-        )
-        return x.graph(**kwargs)
-
-
-class DictofList(Dict, additionalProperties=List.__schema__):
-    def graph(x, **kwargs):
-        return __import__("networkx").from_dict_of_lists(x, **kwargs)
-
-    def digraph(x, **kwargs):
-        kwargs["create_using"] = kwargs.get(
-            "create_using", __import__("networkx").DiGraph()
-        )
-        return x.graph(**kwargs)
-
-
-# In[8]:
-
-
+class DictofList(Dict, additionalProperties=List.__schema__): ...
 class Test(__import__("unittest").TestCase):
-    def test_instances(x):
-        ...
+    def test_instances(x):...
+        
+class NbFormat(Dict, **nbformat.validator._get_schema_json(nbformat.v4)): 
+    __context__ = 'https://raw.githubusercontent.com/jupyter/nbformat/master/nbformat/v4/nbformat.v4.schema.json#/'
 
-
-# In[9]:
-
-
-def load_tests(loader, tests, ignore):
-    tests.addTests(
-        doctest.DocTestSuite(
-            importlib.import_module(__name__), optionflags=doctest.ELLIPSIS
-        )
-    )
-    return tests
-
-
-if __name__ == "__main__":
-    import unittest, pytest, jsonschema, importlib, doctest
-
-    unittest.main(argv=" ", exit=False, verbosity=1)
-
-
-# In[12]:
-
-
-if __name__ == "__main__":
-    get_ipython().system("jupyter nbconvert --to script dicts.ipynb")
-    get_ipython().system("black dicts.py")
-    get_ipython().system("pyreverse dicts -osvg -pdicts")
-    display(__import__("IPython").display.SVG("classes_dicts.svg"))
-    get_ipython().system("rm classes_dicts.svg dicts.py")
-
-
-# In[ ]:
+class JsonPatch(List, **requests.get("http://json.schemastore.org/json-patch").json()):
+    def __call__(self, object): return Type.discover(__import__('jsonpatch').apply_patch(object, self))
+class TableSchema(Dict, **requests.get("https://frictionlessdata.io/schemas/table-schema.json").json()): ...
+class GeoJson(Dict, **requests.get("http://json.schemastore.org/geojson").json()): ...
