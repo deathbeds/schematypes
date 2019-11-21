@@ -1,20 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-
-# In[37]:
-
-
-import importnb
-
-with importnb.Notebook():
-    try:
-        from .schemas import String, JsonSchema, discover
-    except:
-        from schemas import String, JsonSchema, discover
-
-
-# In[28]:
-
+from .schemas import String, JsonSchema, discover
 
 class Uri(String, format="uri"):
     def get(x, *args, **kwargs):
@@ -25,9 +11,6 @@ class Uri(String, format="uri"):
 
     def json(x):
         return get(x).json()
-
-
-# In[29]:
 
 
 class Arrow:
@@ -47,9 +30,6 @@ class Time(Arrow, String, format="time"):
     ...
 
 
-# In[30]:
-
-
 class Email(String, format="email"):
     ...
 
@@ -58,10 +38,8 @@ class JsonPointer(String, format="json-pointer"):
     ...
 
 
-# In[31]:
 
-
-class Markdown(String, pattern=r"^[#|>*|+|-]+\s+"):
+class Markdown(String, pattern=r"^[#|>*|+|-]+\s+", contentMediaType='text/markdown'):
     def display(x):
         return __import__("IPython").display.Markdown(x)
 
@@ -77,9 +55,6 @@ class GraphViz(String, pattern=r"^[di]?graph\s{.+}"):
         return (
             __import__("IPython").get_ipython().display_formatter.format(x.graphviz())
         )
-
-
-# In[32]:
 
 
 class File(String, format="file-path"):
@@ -98,8 +73,6 @@ class File(String, format="file-path"):
         return discover(__import__("anyconfig").load(x, *args, **kwargs))
 
 
-# In[33]:
-
 
 class Test(__import__("unittest").TestCase):
     def test_instances(x):
@@ -107,35 +80,3 @@ class Test(__import__("unittest").TestCase):
         assert not isinstance("#xx", Markdown)
         assert isinstance("# xx", Markdown)
         assert isinstance("strings.ipynb", File)
-
-
-# In[34]:
-
-
-def load_tests(loader, tests, ignore):
-    tests.addTests(
-        doctest.DocTestSuite(
-            importlib.import_module(__name__), optionflags=doctest.ELLIPSIS
-        )
-    )
-    return tests
-
-
-if __name__ == "__main__":
-    import unittest, pytest, jsonschema, importlib, doctest
-
-    unittest.main(argv=" ", exit=False, verbosity=1)
-
-
-# In[38]:
-
-
-if __name__ == "__main__":
-    get_ipython().system("jupyter nbconvert --to script strings.ipynb")
-    get_ipython().system("black strings.py")
-    get_ipython().system("pyreverse strings -osvg -pstrings")
-    display(__import__("IPython").display.SVG("classes_strings.svg"))
-    get_ipython().system("rm strings.py classes_strings.svg")
-
-
-# In[ ]:
