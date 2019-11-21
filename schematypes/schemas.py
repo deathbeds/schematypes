@@ -209,14 +209,24 @@ class Object(JsonSchema):
 
 dataclasses.dataclass(Object)
 
+class Test(__import__('unittest').TestCase):
+    def test_schema_validation(x):
+        with ValidationError: 
+            class Thing(Schema, type='what'): ...
+    def test_dict_validation(x): 
+        t = Dict.new(properties=dict(a=Integer.__schema__))
+        d = t(a=2)
+        with ValidationError: d['a'] = 2.2
+        d.update(a=3.0)
+        assert d['a'] == 3
+        assert isinstance({'a': 100}, t)
+        assert not isinstance({'a': 100.1}, t)
 
-# In[9]:
 
-
-if __name__ == "__main__":
-    get_ipython().system("jupyter nbconvert --to script schemas.ipynb")
-    get_ipython().system("black schemas.py")
-    get_ipython().system("pyreverse schemas -osvg -pschemas")
-
-    display(__import__("IPython").display.SVG("classes_schemas.svg"))
-    get_ipython().system("rm schemas.py classes_schemas.svg")
+    def test_list_validation(x):
+        l = List.new(items=String.__schema__)(list('a'))
+        with ValidationError: l.append(2)
+        l.append('c')
+        assert l == ['a', 'c']
+        assert not isinstance([1, 2], type(l))
+        assert isinstance(['1', '2'], type(l))
