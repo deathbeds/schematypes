@@ -1,5 +1,1 @@
-jsonschema[all]
-munch
-importnb
-pyld
-pytest
+jsonschema[format]
