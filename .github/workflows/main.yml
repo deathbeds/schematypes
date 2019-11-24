@@ -1,0 +1,20 @@
+on: 
+  push:
+    branches:
+    - master
+jobs:
+  run:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@master
+    - uses: actions/setup-python@v1
+      with:
+        python-version: '3.7' # Version range or exact version of a Python version to use, using semvers version range syntax.
+        architecture: 'x64' # (x64 or x86)
+    - run: python setup.py sdist
+    - run: python setup.py bdist_wheel
+    - name: Publish package to Test PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: docfast
+        password: ${{ secrets.test_pypi_password }} 
