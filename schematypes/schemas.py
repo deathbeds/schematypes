@@ -14,16 +14,8 @@ import json
 import sys
 import typing
 
-import anyconfig
-import fastjsonschema
-import hypothesis_jsonschema
 # requests_cache.install_cache('schemas.sqlite')
 import jsonschema
-import nbformat
-import pandas
-import requests
-import requests_cache
-import toolz.curried as toolz
 
 # In[2]:
 
