@@ -1,1 +1,2 @@
 jsonschema[format]
+dataclasses
