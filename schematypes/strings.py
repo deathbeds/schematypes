@@ -71,12 +71,3 @@ class File(String, format="file-path"):
 
     def parse(x, *args, **kwargs):
         return discover(__import__("anyconfig").load(x, *args, **kwargs))
-
-
-
-class Test(__import__("unittest").TestCase):
-    def test_instances(x):
-        assert isinstance("https://api.github.com", Uri)
-        assert not isinstance("#xx", Markdown)
-        assert isinstance("# xx", Markdown)
-        assert isinstance("strings.ipynb", File)
