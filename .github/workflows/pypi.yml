@@ -17,4 +17,4 @@ jobs:
       uses: pypa/gh-action-pypi-publish@master
       with:
         user: docfast
-        password: ${{ secrets.test_pypi_password }} 
+        password: ${{ secrets.test_pypi_password }}
