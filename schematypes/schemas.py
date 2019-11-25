@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Semantic JsonSchema types in python.
-
-# In[1]:
-
-
+import abc
 import collections
 import dataclasses
 import gc
@@ -14,21 +10,18 @@ import json
 import sys
 import typing
 
-# requests_cache.install_cache('schemas.sqlite')
 import jsonschema
-
-# In[2]:
 
 
 class Garbage:
-    def num_refs(x):
-        return gc.collect() and sys.getrefcount(x)
+    def num_refs(self):
+        return gc.collect() and sys.getrefcount(self)
 
-    def referrers(x):
-        return gc.collect() and gc.get_referrers(x)
+    def referrers(self):
+        return gc.collect() and gc.get_referrers(self)
 
-    def referents(x):
-        return gc.collect() and gc.get_referents(x)
+    def referents(self):
+        return gc.collect() and gc.get_referents(self)
 
     def find(self, ns="__main__"):
         hash = id(self)
@@ -44,10 +37,7 @@ class Garbage:
         return type(self)
 
 
-# In[3]:
-
-
-class JsonSchemaType(__import__("abc").ABCMeta, Garbage):
+class JsonSchemaType(abc.ABCMeta, Garbage):
     __meta_schema__ = jsonschema.Draft7Validator.META_SCHEMA
 
     def __new__(cls, name, base, kwargs, **schema):
@@ -55,7 +45,8 @@ class JsonSchemaType(__import__("abc").ABCMeta, Garbage):
         self = super().__new__(cls, name, base, kwargs)
         self.__schema__ = dict(
             collections.ChainMap(
-                schema, *(getattr(cls, "__schema__", {}) for cls in self.__mro__)
+                schema,
+                *(getattr(cls, "__schema__", {}) for cls in self.__mro__),
             )
         )
         self.validate_meta_schema(self.__schema__)
@@ -64,15 +55,17 @@ class JsonSchemaType(__import__("abc").ABCMeta, Garbage):
     @classmethod
     def validate_meta_schema(cls, object):
         jsonschema.validate(
-            object, cls.__meta_schema__, format_checker=jsonschema.draft7_format_checker
+            object,
+            cls.__meta_schema__,
+            format_checker=jsonschema.draft7_format_checker,
         )
 
-    def __instancecheck__(cls, object):
+    def __instancecheck__(self, object):
         try:
             return (
                 jsonschema.validate(
                     object,
-                    cls.__schema__,
+                    self.__schema__,
                     format_checker=jsonschema.draft7_format_checker,
                 )
                 or True
@@ -80,56 +73,70 @@ class JsonSchemaType(__import__("abc").ABCMeta, Garbage):
         except:
             return False
 
-    def discover(x, object=None, **schema):
-        for cls in x.__subclasses__():
+    def discover(self, object=None, **schema):
+        """Traverse the type module resolution order to discover
+        a most compact type representation.
+
+        >>> assert isinstance(JsonSchema.discover(10), int)
+        """
+        for cls in self.__subclasses__():
             try:
                 return cls.discover(cls(getattr(object, "object", object)))
-            except BaseException as e:
+            except BaseException:
                 ...
         return object
 
-    def new(cls, **schema):
+    def new(self, **schema):
         schema = {
-            **cls.__schema__,
+            **self.__schema__,
             **(object if isinstance(object, dict) else {}),
             **schema,
         }
         return type(
-            schema.get("title", __import__("json").dumps(schema)), (cls,), {}, **schema
+            schema.get("title", __import__("json").dumps(schema)),
+            (self,),
+            {},
+            **schema,
         )
 
-    def example(cls):
-        return hypothesis_jsonschema.from_schema(cls.__schema__).example()
+    def example(self):
+        """Generate an example value of the schema.
 
+        >>> assert isinstance(Integer.example(), int)
+        
+        This feature requires `hypothesis_jsonschema `
 
-# In[4]:
+            pip install hypothesis_jsonschema 
+        """
+        return (
+            __import__("hypothesis_jsonschema")
+            .from_schema(self.__schema__)
+            .example()
+        )
 
 
 class JsonSchema(Garbage, metaclass=JsonSchemaType):
-    __context__ = f"{jsonschema.Draft7Validator.META_SCHEMA['$schema']}/properties/"
+    __context__ = (
+        f"{jsonschema.Draft7Validator.META_SCHEMA['$schema']}/properties/"
+    )
 
     def __new__(cls, *args, **kwargs):
-        if args:
-            assert isinstance(args[0], cls)
+        args and cls.validate(args[0])
         return super().__new__(cls, *args, **kwargs)
-        self.__init__(*args, **kwargs)
 
-    def __repr__(x):
-        return x.dumps()
+    def __repr__(self):
+        return self.dumps()
 
-    def dumps(x, *args, **kwargs):
-        return __import__("ujson").dumps(x, *args, **kwargs)
+    def dumps(self, *args, **kwargs):
+        return __import__("ujson").dumps(self, *args, **kwargs)
 
     @classmethod
     def validate(cls, object):
         assert isinstance(object, cls)
 
 
-
 discover = JsonSchema.discover
 
-
-# In[5]:
 
 class List(JsonSchema, list, type="array"):
     def __new__(cls, *args, **kwargs):
@@ -144,24 +151,37 @@ class Dict(JsonSchema, dict, type="object"):
         return super().__new__(cls, *args, **kwargs)
 
     def __init_subclass__(cls, **schema):
-        cls.__schema__.update(schema)
+        cls.__schema__.update(schema)  # pylint: disable=no-member
         if getattr(cls, "__annotations__", {}):
-            cls.__schema__.update(
+            cls.__schema__.update(  # pylint: disable=no-member
                 properties={
                     key: value.__schema__
-                    for key, value in getattr(cls, "__annotations__", {}).items()
+                    for key, value in getattr(
+                        cls, "__annotations__", {}
+                    ).items()
                     if hasattr(value, "__schema__")
                 }
             )
-        cls.validate_meta_schema(cls.__schema__)
+        cls.validate_meta_schema(cls.__schema__)  # pylint: disable=no-member
 
 
 class String(JsonSchema, str, type="string"):
-    def parse(x, *args, **kwargs):
-        return discover(anyconfig.loads(x, *args, **kwargs))
+    def parse(self, *args, **kwargs):
+        """Generate an example value of the schema.
 
-    def json(x):
-        return __import__("ujson").loads(x)
+        >>> assert isinstance(Integer.example(), int)
+        
+        This feature requires `anyconfig`
+
+            pip install anyconfig 
+        """
+        return JsonSchema.discover(
+            __import__("anyconfig").loads(self, *args, **kwargs)
+        )
+
+    def json(self):
+        return __import__("ujson").loads(self)
+
 
 class Integer(JsonSchema, int, type="integer"):
     ...
@@ -170,18 +190,16 @@ class Integer(JsonSchema, int, type="integer"):
 class Number(JsonSchema, float, type="number"):
     ...
 
+
 class Boolean(JsonSchema, type="boolean"):
     def __new__(cls, object=None, *args, **kwargs):
         cls.validate(object)
         return object
 
+
 class Null(JsonSchema, type="null"):
     def __new__(cls, object=None, *args, **kwargs):
         return cls.validate(object)
-
-
-
-# In[6]:
 
 
 class Object(JsonSchema):
@@ -195,11 +213,11 @@ class Object(JsonSchema):
         self.__init__(*args, **kwargs)
         return self
 
-    def __post_init__(x):
-        x.object = getattr(x, "object", x.object)
-        assert isinstance(x.object, type(x))
+    def __post_init__(self):
+        self.object = getattr(self, "object", self.object)
+        assert isinstance(self.object, type(self))
 
-    def _repr_mimebundle_(x, include=None, exclude=None, **metadata):
+    def _repr_mimebundle_(self, include=None, exclude=None, **metadata):
         return {}, metadata
 
 

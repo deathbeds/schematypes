@@ -26,6 +26,6 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    pip install pytest pytest-azurepipelines importnb
-    pytest
+    pip install pytest pytest-azurepipelines importnb pytest-black
+    pytest --black
   displayName: 'pytest'

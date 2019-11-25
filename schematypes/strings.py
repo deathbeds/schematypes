@@ -2,20 +2,21 @@
 # coding: utf-8
 from .schemas import String, JsonSchema, discover
 
+
 class Uri(String, format="uri"):
-    def get(x, *args, **kwargs):
-        return __import__("requests").get(x, *args, **kwargs)
+    def get(self, *args, **kwargs):
+        return __import__("requests").get(self, *args, **kwargs)
 
-    def text(x):
-        return Uri.get(x).text
+    def text(self):
+        return Uri.get(self).text
 
-    def json(x):
-        return get(x).json()
+    def json(self):
+        return Uri.get(self).json()
 
 
 class Arrow:
-    def time(x: String) -> "arrow.Arrow":
-        return __import__("arrow").Arrow(x)
+    def time(self: String) -> "arrow.Arrow":
+        return __import__("arrow").Arrow(self)
 
 
 class Date(Arrow, String, format="date"):
@@ -38,36 +39,43 @@ class JsonPointer(String, format="json-pointer"):
     ...
 
 
+class Markdown(
+    String, pattern=r"^[#|>*|+|-]+\s+", contentMediaType="text/markdown"
+):
+    def display(self):
+        return __import__("IPython").display.Markdown(self)
 
-class Markdown(String, pattern=r"^[#|>*|+|-]+\s+", contentMediaType='text/markdown'):
-    def display(x):
-        return __import__("IPython").display.Markdown(x)
-
-    def _repr_mimebundle_(x, include=None, exclude=None):
-        return __import__("IPython").get_ipython().display_formatter.format(x.display())
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        return (
+            __import__("IPython")
+            .get_ipython()
+            .display_formatter.format(self.display())
+        )
 
 
 class GraphViz(String, pattern=r"^[di]?graph\s{.+}"):
-    def graphviz(x):
-        return __import__("graphviz").Source(x)
+    def graphviz(self):
+        return __import__("graphviz").Source(self)
 
-    def _repr_mimebundle_(x, include=None, exclude=None):
+    def _repr_mimebundle_(self, include=None, exclude=None):
         return (
-            __import__("IPython").get_ipython().display_formatter.format(x.graphviz())
+            __import__("IPython")
+            .get_ipython()
+            .display_formatter.format(self.graphviz())
         )
 
 
 class File(String, format="file-path"):
-    def __init__(x, *a, **k):
-        assert __import__("pathlib").Path(x).exists()
+    def __init__(self, *a, **k):
+        assert __import__("pathlib").Path(self).exists()
 
-    def read_text(x):
-        return String.discover(__import__("pathlib").Path(x).read_text())
+    def read_text(self):
+        return String.discover(__import__("pathlib").Path(self).read_text())
 
-    def read_json(x):
-        with open(x) as file:
+    def read_json(self):
+        with open(self) as file:
             object = __import__("ujson").load(file)
         return object
 
-    def parse(x, *args, **kwargs):
-        return discover(__import__("anyconfig").load(x, *args, **kwargs))
+    def parse(self, *args, **kwargs):
+        return discover(__import__("anyconfig").load(self, *args, **kwargs))
