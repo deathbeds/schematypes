@@ -9,14 +9,7 @@ class Pandas(Object):
             data,
             {
                 **metadata,
-                "allOf": [
-                    TableSchema(
-                        __import__("json").loads(x.object.to_json(orient="table"))[
-                            "schema"
-                        ]
-                    ),
-                    List.new(minItems=len(x.object), maxItems=len(x.object)).__schema__,
-                ],
+                "allOf": [],
             },
         )
 

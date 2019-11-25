@@ -67,10 +67,6 @@ class JsonSchemaType(__import__("abc").ABCMeta, Garbage):
             object, cls.__meta_schema__, format_checker=jsonschema.draft7_format_checker
         )
 
-    @classmethod
-    def validate(cls, object):
-        assert isinstance(object, cls)
-
     def __instancecheck__(cls, object):
         try:
             return (
@@ -124,25 +120,16 @@ class JsonSchema(Garbage, metaclass=JsonSchemaType):
     def dumps(x, *args, **kwargs):
         return __import__("ujson").dumps(x, *args, **kwargs)
 
+    @classmethod
+    def validate(cls, object):
+        assert isinstance(object, cls)
+
+
 
 discover = JsonSchema.discover
 
 
 # In[5]:
-
-
-class Null(JsonSchema, type="null"):
-    def __new__(cls, object=None, *args, **kwargs):
-        return cls.__schema__.validate(object)
-
-
-class Integer(JsonSchema, int, type="integer"):
-    ...
-
-
-class Number(JsonSchema, float, type="number"):
-    ...
-
 
 class List(JsonSchema, list, type="array"):
     def __new__(cls, *args, **kwargs):
@@ -175,6 +162,23 @@ class String(JsonSchema, str, type="string"):
 
     def json(x):
         return __import__("ujson").loads(x)
+
+class Integer(JsonSchema, int, type="integer"):
+    ...
+
+
+class Number(JsonSchema, float, type="number"):
+    ...
+
+class Boolean(JsonSchema, type="boolean"):
+    def __new__(cls, object=None, *args, **kwargs):
+        cls.validate(object)
+        return object
+
+class Null(JsonSchema, type="null"):
+    def __new__(cls, object=None, *args, **kwargs):
+        return cls.validate(object)
+
 
 
 # In[6]:
