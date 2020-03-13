@@ -21,11 +21,6 @@ import sys
 from setuptools.command.test import test as TestCommand
 
 
-class PyTest(TestCommand):
-    def run_tests(self):
-        sys.exit(__import__("pytest").main([]))
-
-
 install_requires = []
 
 setup_args = dict(
@@ -61,7 +56,6 @@ setup_args = dict(
         "Programming Language :: Python :: 3 :: Only",
     ],
     zip_safe=False,
-    cmdclass={"test": PyTest},
     entry_points={},
 )
 
